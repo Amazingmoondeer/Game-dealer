@@ -1,14 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Archery Clash Game</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Archery Clash</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      touch-action: none;
+      font-family: sans-serif;
+      background-color: #f0f9ff;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      border: 2px solid #333;
+      background-color: #cfefff;
+    }
+    #scoreboard {
+      text-align: center;
+      font-size: 20px;
+      margin: 10px;
+    }
+  </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="800" height="400"></canvas>
-  <script src="script.js"></script>
+  <div id="scoreboard">Level: 1 | Score: 0</div>
+  <canvas id="gameCanvas" width="800" height="450"></canvas>
+  <script src="game.js"></script>
 </body>
 </html>
- 

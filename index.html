@@ -2,32 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Archery Clash</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Builder</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      touch-action: none;
-      font-family: sans-serif;
-      background-color: #f0f9ff;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #f9f9f9;
     }
-    canvas {
-      display: block;
-      margin: auto;
-      border: 2px solid #333;
-      background-color: #cfefff;
-    }
-    #scoreboard {
+
+    h1 {
       text-align: center;
-      font-size: 20px;
-      margin: 10px;
+    }
+
+    .form-section, .resume-section {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .resume-section {
+      display: none;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .resume h2 {
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
     }
   </style>
 </head>
 <body>
-  <div id="scoreboard">Level: 1 | Score: 0</div>
-  <canvas id="gameCanvas" width="800" height="450"></canvas>
-  <script src="game.js"></script>
+
+  <h1>Resume Builder</h1>
+
+  <div class="form-section">
+    <label>Full Name:</label>
+    <input type="text" id="name">
+
+    <label>Email:</label>
+    <input type="email" id="email">
+
+    <label>Phone:</label>
+    <input type="tel" id="phone">
+
+    <label>Summary:</label>
+    <textarea id="summary"></textarea>
+
+    <label>Skills (comma-separated):</label>
+    <input type="text" id="skills">
+
+    <label>Experience:</label>
+    <textarea id="experience"></textarea>
+
+    <label>Education:</label>
+    <textarea id="education"></textarea>
+
+    <button onclick="generateResume()">Generate Resume</button>
+  </div>
+
+  <div class="resume-section" id="resume">
+    <div class="resume">
+      <h2 id="r-name"></h2>
+      <p><strong>Email:</strong> <span id="r-email"></span></p>
+      <p><strong>Phone:</strong> <span id="r-phone"></span></p>
+
+      <h2>Summary</h2>
+      <p id="r-summary"></p>
+
+      <h2>Skills</h2>
+      <ul id="r-skills"></ul>
+
+      <h2>Experience</h2>
+      <p id="r-experience"></p>
+
+      <h2>Education</h2>
+      <p id="r-education"></p>
+    </div>
+  </div>
+
+  <script>
+    function generateResume() {
+      document.getElementById('r-name').innerText = document.getElementById('name').value;
+      document.getElementById('r-email').innerText = document.getElementById('email').value;
+      document.getElementById('r-phone').innerText = document.getElementById('phone').value;
+      document.getElementById('r-summary').innerText = document.getElementById('summary').value;
+      document.getElementById('r-experience').innerText = document.getElementById('experience').value;
+      document.getElementById('r-education').innerText = document.getElementById('education').value;
+
+      let skills = document.getElementById('skills').value.split(',');
+      let skillsList = document.getElementById('r-skills');
+      skillsList.innerHTML = '';
+      skills.forEach(skill => {
+        let li = document.createElement('li');
+        li.innerText = skill.trim();
+        skillsList.appendChild(li);
+      });
+
+      document.querySelector('.resume-section').style.display = 'block';
+    }
+  </script>
+
 </body>
 </html>

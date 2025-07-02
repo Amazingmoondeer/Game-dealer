@@ -1,132 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Resume Builder</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Pricing + Payment + Auth Demo</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-auth-compat.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 40px;
-      background: #f9f9f9;
-    }
-
-    h1 {
-      text-align: center;
-    }
-
-    .form-section, .resume-section {
-      max-width: 800px;
-      margin: auto;
-      padding: 20px;
-      background: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      margin-bottom: 30px;
-    }
-
-    .resume-section {
-      display: none;
-    }
-
-    label {
-      display: block;
-      margin-top: 15px;
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-    }
-
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    .resume h2 {
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 5px;
-    }
+    /* (Reuse your styles from earlier) */
+    .hidden { display: none; }
+    .dashboard { border: 2px solid #666; padding: 20px; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
   </style>
 </head>
 <body>
+  <h1>Choose Your Plan</h1>
+  <!-- Auth UI -->
+  <div id="auth-section">
+    <input type="email" id="email" placeholder="Email"/>
+    <input type="password" id="password" placeholder="Password"/>
+    <button id="btn-signup">Sign Up</button>
+    <button id="btn-login">Log In</button>
+    <button id="btn-logout" class="hidden">Log Out</button>
+  </div>
+  <div id="user-greeting" class="hidden"></div>
 
-  <h1>Resume Builder</h1>
-
-  <div class="form-section">
-    <label>Full Name:</label>
-    <input type="text" id="name">
-
-    <label>Email:</label>
-    <input type="email" id="email">
-
-    <label>Phone:</label>
-    <input type="tel" id="phone">
-
-    <label>Summary:</label>
-    <textarea id="summary"></textarea>
-
-    <label>Skills (comma-separated):</label>
-    <input type="text" id="skills">
-
-    <label>Experience:</label>
-    <textarea id="experience"></textarea>
-
-    <label>Education:</label>
-    <textarea id="education"></textarea>
-
-    <button onclick="generateResume()">Generate Resume</button>
+  <!-- Pricing Toggle -->
+  <div class="toggle-container">
+    <label id="monthlyBtn" class="active">Monthly</label>
+    <label id="yearlyBtn">Yearly</label>
   </div>
 
-  <div class="resume-section" id="resume">
-    <div class="resume">
-      <h2 id="r-name"></h2>
-      <p><strong>Email:</strong> <span id="r-email"></span></p>
-      <p><strong>Phone:</strong> <span id="r-phone"></span></p>
+  <!-- Pricing Table -->
+  <div class="pricing-table" id="pricing-table"></div>
 
-      <h2>Summary</h2>
-      <p id="r-summary"></p>
+  <!-- Plan Comparison -->
+  <h2>Compare Plans</h2>
+  <table id="comparison-table">
+    <thead><tr><th>Feature</th><th>Basic</th><th>Pro</th><th>Enterprise</th></tr></thead>
+    <tbody>
+      <tr><td>Projects</td><td>1</td><td>10</td><td>Unlimited</td></tr>
+      <tr><td>Support</td><td>Basic</td><td>Priority</td><td>24/7</td></tr>
+      <tr><td>Storage</td><td>5 GB</td><td>50 GB</td><td>1 TB</td></tr>
+    </tbody>
+  </table>
 
-      <h2>Skills</h2>
-      <ul id="r-skills"></ul>
-
-      <h2>Experience</h2>
-      <p id="r-experience"></p>
-
-      <h2>Education</h2>
-      <p id="r-education"></p>
+  <!-- Admin Dashboard -->
+  <div id="admin-dashboard" class="dashboard hidden">
+    <h3>Admin: Update Plan Prices</h3>
+    <div>
+      <label>Plan:
+        <select id="admin-plan">
+          <option value="basic">Basic</option>
+          <option value="pro">Pro</option>
+          <option value="enterprise">Enterprise</option>
+        </select>
+      </label>
     </div>
+    <div>
+      <label>Monthly $: <input type="number" id="admin-monthly"/></label>
+      <label>Yearly $: <input type="number" id="admin-yearly"/></label>
+    </div>
+    <button id="admin-save">Save</button>
   </div>
 
   <script>
-    function generateResume() {
-      document.getElementById('r-name').innerText = document.getElementById('name').value;
-      document.getElementById('r-email').innerText = document.getElementById('email').value;
-      document.getElementById('r-phone').innerText = document.getElementById('phone').value;
-      document.getElementById('r-summary').innerText = document.getElementById('summary').value;
-      document.getElementById('r-experience').innerText = document.getElementById('experience').value;
-      document.getElementById('r-education').innerText = document.getElementById('education').value;
+    // -- Firebase Auth Setup --
+    const firebaseConfig = { /* YOUR FIREBASE CONFIG */ };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const btnSignup = document.getElementById('btn-signup');
+    const btnLogin = document.getElementById('btn-login');
+    const btnLogout = document.getElementById('btn-logout');
+    const emailEl = document.getElementById('email'), passEl = document.getElementById('password');
+    const userGreeting = document.getElementById('user-greeting');
+    const adminDashboard = document.getElementById('admin-dashboard');
 
-      let skills = document.getElementById('skills').value.split(',');
-      let skillsList = document.getElementById('r-skills');
-      skillsList.innerHTML = '';
-      skills.forEach(skill => {
-        let li = document.createElement('li');
-        li.innerText = skill.trim();
-        skillsList.appendChild(li);
-      });
+    btnSignup.onclick = () => auth.createUserWithEmailAndPassword(emailEl.value, passEl.value)
+      .catch(e => alert(e.message));
+    btnLogin.onclick = () => auth.signInWithEmailAndPassword(emailEl.value, passEl.value)
+      .catch(e => alert(e.message));
+    btnLogout.onclick = () => auth.signOut();
 
-      document.querySelector('.resume-section').style.display = 'block';
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        userGreeting.textContent = `Logged in as ${user.email}`; userGreeting.classList.remove('hidden');
+        btnLogout.classList.remove('hidden');
+        btnSignup.classList.add('hidden'); btnLogin.classList.add('hidden');
+        if (user.email === 'admin@domain.com') adminDashboard.classList.remove('hidden');
+      } else {
+        userGreeting.classList.add('hidden');
+        btnLogout.classList.add('hidden');
+        btnSignup.classList.remove('hidden'); btnLogin.classList.remove('hidden');
+        adminDashboard.classList.add('hidden');
+      }
+    });
+
+    // -- Plan Data & Admin --
+    const plans = {
+      basic: { monthly: 9, yearly: 90 },
+      pro: { monthly: 19, yearly: 190 },
+      enterprise: { monthly: 49, yearly: 490 }
+    };
+
+    const adminPlanEl = document.getElementById('admin-plan');
+    const adminMonthlyEl = document.getElementById('admin-monthly');
+    const adminYearlyEl = document.getElementById('admin-yearly');
+    document.getElementById('admin-save').onclick = () => {
+      const p=adminPlanEl.value;
+      plans[p].monthly = Number(adminMonthlyEl.value);
+      plans[p].yearly = Number(adminYearlyEl.value);
+      renderPricing(currentType);
+    };
+
+    // -- Pricing UI & Stripe --
+    const pricingTable = document.getElementById('pricing-table');
+    const stripe = Stripe('YOUR_STRIPE_PUBLISHABLE_KEY');
+    let currentType = 'monthly';
+
+    function payWithStripe(planKey) {
+      // Create checkout session server-side (stub):
+      alert('Redirecting to Stripe Checkout for ' + planKey);
+      // In production, you'd fetch a session ID from your backend and call stripe.redirectToCheckout(...)
     }
-  </script>
 
+    function renderPricing(type) {
+      pricingTable.innerHTML = '';
+      for (const [key, p] of Object.entries(plans)) {
+        const div = document.createElement('div');
+        div.className = 'plan' + (key === 'pro' ? ' popular' : '');
+        div.innerHTML = `
+          <h3>${key.charAt(0).toUpperCase()+key.slice(1)}</h3>
+          <div class="price">$${p[type]} / ${type === 'monthly' ? 'mo' : 'yr'}</div>
+          <button onclick="payWithStripe('${key}')">Pay with Stripe</button>
+          <button onclick="alert('PayPal flow stub')">Pay with PayPal</button>
+        `;
+        pricingTable.appendChild(div);
+      }
+    }
+
+    // -- Pricing Toggle --
+    document.getElementById('monthlyBtn').onclick = () => updateType('monthly');
+    document.getElementById('yearlyBtn').onclick = () => updateType('yearly');
+    function updateType(type) {
+      currentType = type;
+      document.getElementById('monthlyBtn').classList.toggle('active', type === 'monthly');
+      document.getElementById('yearlyBtn').classList.toggle('active', type === 'yearly');
+      renderPricing(type);
+    }
+
+    // -- Initial render --
+    renderPricing(currentType);
+  </script>
 </body>
 </html>
